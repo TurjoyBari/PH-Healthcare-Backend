@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
+import { AppError } from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-
-import { ApplyAsDoctorValidationZodSchema } from "./doctor.validation";
 import { DoctorServices } from "./doctor.service";
+import { ApplyAsDoctorValidationZodSchema } from "./doctor.validation";
 
 const applyAsDoctor = catchAsync(async (req: Request, res: Response) => {
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -12,27 +12,14 @@ const applyAsDoctor = catchAsync(async (req: Request, res: Response) => {
   const resume = files?.["resume"] ? files["resume"][0] : null;
   const additionalFiles = files?.["additionalFiles"] || [];
 
-  let rawPayload;
-  if (req.body.data) {
-    try {
-      rawPayload = JSON.parse(req.body.data);
-    } catch (parseError) {
-      throw new Error("Invalid JSON format inside form-data 'data' field");
-    }
-  } else {
-    rawPayload = req.body;
-  }
-
-  const zodValidationResult =
-    ApplyAsDoctorValidationZodSchema.safeParse(rawPayload);
+  const zodValidationResult = ApplyAsDoctorValidationZodSchema.safeParse(
+    JSON.parse(req.body.data),
+  );
 
   if (!zodValidationResult.success) {
-    // This extracts the exact field path (e.g., "user.email" or "doctor.designation")
-    const missingFieldPath = zodValidationResult.error.issues[0].path.join(".");
-    const errorMessage = zodValidationResult.error.issues[0].message;
-
-    throw new Error(
-      `Validation failed on [${missingFieldPath}]: ${errorMessage}`,
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      zodValidationResult.error.issues[0].message,
     );
   }
 
@@ -50,7 +37,43 @@ const applyAsDoctor = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const verifyDoctorEmail = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+  const result = await DoctorServices.verifyDoctorEmail(payload);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor Email Verified Successfully",
+    data: result,
+  });
+});
+const approveDoctor = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const user = req.user!;
+
+  const result = await DoctorServices.approveDoctor(payload, user);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor Email Verified Successfully",
+    data: result,
+  });
+});
+const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
+  const { data, meta } = await DoctorServices.getAllDoctors(req.query);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctors Retrieved Successfully",
+    data: data,
+    meta: meta,
+  });
+});
 
 export const DoctorController = {
   applyAsDoctor,
+  verifyDoctorEmail,
+  approveDoctor,
+  getAllDoctors,
 };
