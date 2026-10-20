@@ -14,6 +14,9 @@ import { UserRoutes } from "./app/module/user/user.route";
 import { AppointementRoutes } from "./app/module/appointment/appointment.route";
 import { DoctorRoutes } from "./app/module/doctor/doctor.route";
 import { ScheduleRoutes } from "./app/module/schedule/schedule.route";
+import { PaymentRoutes } from "./app/module/payment/payment.route";
+import { PrescriptionRoutes } from "./app/module/prescription/prescription.route";
+import { AnalyticsRoutes } from "./app/module/analytics/analytics.route";
 
 const app: Application = express();
 
@@ -36,6 +39,9 @@ app.use("/api/v1/user", UserRoutes);
 app.use("/api/v1/appointment", AppointementRoutes);
 app.use("/api/v1/doctor", DoctorRoutes);
 app.use("/api/v1/schedule", ScheduleRoutes);
+app.use("/api/v1/payment", PaymentRoutes);
+app.use("/api/v1/prescription", PrescriptionRoutes);
+app.use("/api/v1/analytics", AnalyticsRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
